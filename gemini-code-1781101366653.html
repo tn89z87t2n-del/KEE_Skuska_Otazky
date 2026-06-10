@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kvíz z EMC a Kvality Elektrickej Energie</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            width: 100%;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .question {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            padding: 14px 20px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--primary);
+            background-color: #eff6ff;
+        }
+
+        .option-btn.correct {
+            background-color: #ecfdf5;
+            border-color: var(--success);
+            color: #065f46;
+            font-weight: 600;
+        }
+
+        .option-btn.incorrect {
+            background-color: #fef2f2;
+            border-color: var(--error);
+            color: #991b1b;
+        }
+
+        .explanation {
+            background-color: #f8fafc;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        .explanation-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+
+        .nav-layout {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .result-screen {
+            text-align: center;
+        }
+
+        .score {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="menu-screen">
+        <h1>Skúškový Kvíz</h1>
+        <p class="subtitle">Vyber si okruh otázok na opakovanie</p>
+        <div class="menu-grid">
+            <button class="btn" onclick="startQuiz(1)">📋 Test 1 (Otázky 1 - 30)</button>
+            <button class="btn" onclick="startQuiz(2)">📋 Test 2 (Otázky 31 - 60)</button>
+            <button class="btn" onclick="startQuiz(3)">📋 Test 3 (Otázky 61 - 82)</button>
+            <button class="btn" onclick="startQuiz(4)">📝 Test 4 (Otvorené otázky a príklady zo záveru)</button>
+        </div>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div class="quiz-header">
+            <span id="quiz-title">Test</span>
+            <span id="progress">Otázka 1 z X</span>
+        </div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container" class="options"></div>
+        
+        <div id="explanation-box" class="explanation hidden">
+            <div class="explanation-title" id="explanation-type">Vysvetlenie</div>
+            <div id="explanation-text"></div>
+        </div>
+
+        <div class="nav-layout">
+            <button class="btn" id="next-btn" onclick="nextQuestion()" style="text-align: center; width: auto; margin-left: auto;">Ďalšia otázka →</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="result-screen hidden">
+        <h1>Test Dokončený!</h1>
+        <p class="subtitle">Tvoj dosiahnutý výsledok:</p>
+        <div class="score" id="score-display">0 / 0</div>
+        <p id="feedback-text"></p>
+        <button class="btn" onclick="showMenu()" style="text-align: center; margin-top: 20px;">Späť na výber testu</button>
+    </div>
+</div>
+
+<script>
+    const allQuestions = [
+        // TEST 1
+        { q: "1 Pri elektromagnetickej interferencii:", a: ["A. nedochádza k nežiadúcemu ovplyvneniu a následnému zhoršeniu funkčnosti zariadenia", "B. nebude kompatibilná úroveň prekročená vôbec a EMC bude zabezpečená", "C. nie sú zariadenia elektromagneticky kompatibilné"], correct: 2, exp: "Interferencia znamená nežiadúce ovplyvnenie, preto zariadenia nie sú kompatibilné.", test: 1 },
+        { q: "2 Nízkofrekvenčné rušenie sa sleduje pre frekvencie:", a: ["A. 0 až 2000 Hz", "B. 50 až 2500 Hz", "C. 50 až 2000 Hz"], correct: 0, exp: "Nízkofrekvenčné spektrum pre rušenie sa uvažuje už od jednosmerných zložiek (0 Hz) až do 2000 Hz.", test: 1 },
+        { q: "3 Napäťové charakteristiky elektrickej energie pre vvn zariadenia sú dané v norme:", a: ["A. STN 33 3430", "B. STN EN 50 160 (33 0121)", "C. STN EN 61000-3-3"], correct: 0, exp: "Norma STN EN 50160 pokrýva nn a vn siete, kým pre vvn platí národná norma STN 33 3430.", test: 1 },
+        { q: "4 Kvalitatívnym parametrom podľa normy charakterizujúcej napäťové charakteristiky je:", a: ["A. frekvencia", "B. prúdové harmonické zložky", "C. účinník základnej harmonickej"], correct: 0, exp: "Norma EN 50160 definuje charakteristiky napätia, nie prúdu či odberu.", test: 1 },
+        { q: "5 Činiteľ prúdovej nesymetrie je definiert ako:", a: ["A. pomer veľkosti spätnej ku súslednej zložke prúdu", "B. pomer veľkosti spätnej a súslednej zložky napätia", "C. pomer veľkosti netočivej a súslednej zložky prúdu"], correct: 0, exp: "Nesymetria prúdu je definovaná ako pomer spätnej zložky prúdu k súslednej zložke prúdu.", test: 1 },
+        { q: "6 Najmenšiu prúdovú nesymetriu spôsobujú:", a: ["A. veľký jednofázový odber", "B. transponované vzdušné vedenie", "C. malé jednofázové spotrebiče"], correct: 2, exp: "Malé jednofázové záťaže majú minimálny príspevok k celkovej nesymetrii trojfázovej sústavy.", test: 1 },
+        { q: "7 Pre trojfázovú súslednú zložkovú sústavu platí:", a: ["A. sled fáz je rovnaký ako u pôvodnej nesúmernej sústavy napätí", "B. sled fáz je rovnaký ako u pôvodnej nesúmernej sústavy prúdov", "C. sled fáz je opačný ako u pôvodnej nesúmernej sústavy napätí"], correct: 0, exp: "Súsledná zložková sústava má zo svojej definície rovnaký sled fáz ako pôvodná napäťová sústava.", test: 1 },
+        { q: "8 Pri fázovej nesymetrii môže činiteľ prúdovej nesymetrie nadobúdať hodnoty od:", a: ["A. 0 do 100%", "B. 0 do 273%", "C. 0 do nekonečno %"], correct: 0, exp: "Pri čistej fázovej nesymetrii (zmeny uhlov pri zachovaní amplitúd) neprekročí hodnota limit 100%.", test: 1 },
+        { q: "9 Nesúmernú sústavu prúdov vo fáze B trojfázovej sústavy vieme vyjadriť podľa vzťahu:", a: ["A. I_B = I_A+ + a² * I_A- + a * I_A0", "B. 18 a² * IA++ a*IA-+1A0", "C. I_B = a * I_A+ + a² * I_A- + I_A0"], correct: 2, exp: "Pozor na preklepy v originálnom texte predlohy. Správna akademická verzia využíva operátor natočenia.", test: 1 },
+        { q: "10 Pri zapojení jednofázového spotrebiča na združené napätie trojfázovej sústavy sú straty vedení:", a: ["A. rovnaké ako pri zapojení trojfázového spotrebiča s takým istým výkonom", "B. 1,5 násobne väčšie ako pri zapojení trojfázového spotrebiča s takým istým výkonom", "C. 2 násobne väčšie ako pri zapojení trojfázového spotrebiča s takým istým výkonom"], correct: 2, exp: "Pri jednofázovom odbere na združené napätie vykazuje sústava presne dvojnásobné celkové straty oproti symetrickému trojfázovému odberu rovnakého činného výkonu.", test: 1 },
+        { q: "11 Kompatibilná úroveň je úroveň rušenia, u ktorej očakáva že:", a: ["A. bude prekročená s pravdepodobnosťou rušenia väčšou ako 5%", "B. nebude prekročená vôbec a EMC bude zabezpečená", "C. bude prekročená s malou pravdepodobnosťou a EMC bude zabezpečená"], correct: 2, exp: "Kompatibilná úroveň nie je absolútna hranica; pripúšťa sa občasné prekročenie s nízkou pravdepodobnosťou.", test: 1 },
+        { q: "12 Nízkofrekvenčné rušenie sa sleduje pre frekvencie:", a: ["A. 50 až 2000 Hz", "B. 0 až 2000 Hz", "C. 100 až 2000 Hz"], correct: 1, exp: "Identická s otázkou 2, rozsah od jednosmernej zložky (0 Hz).", test: 1 },
+        { q: "13 Elektrostatické rušenie:", a: ["A. vzniká pri úderoch bleskov", "B. je spôsobené poliami mobilných telefónov", "C. sú výboje na kostre alebo v blízkosti nevodivého plášťa prístroja"], correct: 2, exp: "Elektrostatický výboj (ESD) vzniká trením a prenosom náboja na povrchoch a krytoch zariadení.", test: 1 },
+        { q: "14 Napäťové charakteristiky elektrickej energie nie sú dané v norme:", a: ["A. STN 33 3430", "B. STN EN 50 160 (33 0121)", "C. STN IEC 605-4"], correct: 2, exp: "Norma STN IEC 605-4 nešpecifikuje parametre kvality elektrickej energie.", test: 1 },
+        { q: "15 Kvalitatívnym parametrom podľa normy charakterizujúcej napäťové charakteristiky nie je (sú):", a: ["A. frekvencia", "B. napäťové harmonické zložky", "C. účinník základnej harmonickej"], correct: 2, exp: "Účinník odberateľa nie je priamym parametrom kvality napájacieho napätia distribúcie.", test: 1 },
+        { q: "16 Činiteľ napäťovej nesymetrie je definovaný ako:", a: ["A. pomer spätnej ku súslednej zložke prúdu", "B. pomer veľkostí spätnej a súslednej zložky napätia", "C. pomer veľkosti netočivej a súslednej zložky napätia"], correct: 1, exp: "Definícia vychádza výhradne z pomeru zložiek napätia (U_ / U_ +).", test: 1 },
+        { q: "17 Priemyslové zariadenie môže byť pripojené a trvalo prevádzkované pokiaľ:", a: ["A. koeficient prúdovej nesymetrie je väčší ako 50%", "B. koeficient napäťovej nesymetrie je väčší ako 2%", "C. koeficient napäťovej nesymetrie je väčší ako 10%"], correct: 1, exp: "Pozor, v origináli je logická chyba. Otázka 46 potvrdzuje, že limitná hodnota nesymetrie pre nepripojenie je nad 2%.", test: 1 },
+        { q: "18 Pre trojfázovú súslednú zložkovú sústavu platí:", a: ["A. sled fáz je rovnaký ako u pôvodnej nesúmernej sústavy napätí", "B. sled fáz je rovnaký ako u pôvodnej nesúmernej sústavy prúdov", "C. sled fáz je opačný ako u pôvodnej nesúmernej sústavy napätí"], correct: 0, exp: "Opakovaná otázka zo šablóny testov.", test: 1 },
+        { q: "19 Jednofázový spotrebič počas prevádzky spôsobí prúdovú nesymetriu:", a: ["A. od 0 do 100%", "B. vždy 100%", "C. od 0 do 273 %"], correct: 1, exp: "Samostatný jednofázový spotrebič generuje rovnakú veľkosť spätnej aj súslednej zložky prúdu, čo zodpovedá presne 100% nesymetrii.", test: 1 },
+        { q: "20 Činiteľ napäťovej nesymetrie je možné približne určiť podľa vzťahu:", a: ["A. ρ_U = (S_AB / S_k3) * 100%, kde S_AB je výkon spotrebiča", "B. ρ_U = (S_k3 / S_AB) * 100%", "C. ρ_U = (U+ / U-) * 100%"], correct: 0, exp: "Približný výpočet cez pomer zdanlivého výkonu jednofázovej záťaže a skratového výkonu siete.", test: 1 },
+        { q: "21 Pri zapojení dvoch jednofázových spotrebičov na združené napätia trojfázovej sústavy sú straty vo vedení:", a: ["A. rovnaké ako pri zapojení trojfázového spotrebiča s takým istým výkonom", "B. 1,5 násobne väčšie ako pri zapojení trojfázového spotrebiča s takým istým výkonom", "C. o 25% vyššie ako pri zapojení trojfázového spotrebiča s takým istým výkonom"], correct: 1, exp: "Pri dvoch spotrebičoch zapojených nesúmerne na združené napätia stúpnu straty na 1.5 násobok ideálneho trojfázového stavu.", test: 1 },
+        { q: "22 Činný výkon vo fáze A (P_A) pri zapojení jednofázového spotrebiča na združené napätie U_AB s činným výkonom P_AB = 5 MW, cos fi_AB = 0,6 sa rovná:", a: ["A. P_A = 7,66 MW", "B. P_A = 4,42 MW", "C. P_A = 0,99 MW"], correct: 1, exp: "Priamy výpočet z príkladu 1.2.1 skrípt UNIZA.", test: 1 },
+        { q: "23 Na striedavej strane 6-impulzového usmerňovača sa nevyskytujú nasledovné charakteristické harmonické:", a: ["A. 11,13,23,25,35,37...", "B. 5,7,11,13,17,19...", "C. 6,12,18,24..."], correct: 2, exp: "Pre 6-impulzový usmerňovač platí harmonický rad h = 6k ± 1. Párne a násobky troch sa na AC strane nevyskytujú.", test: 1 },
+        { q: "24 Veľkosť prúdových harmonických nezávisí hlavne od:", a: ["A. komutačného uhla", "B. zapojenia usmerňovača (mostíkové, uzlové)", "C. od spôsobu riadenia a veľkosti riadiaceho uhla"], correct: 1, exp: "Zapojenie usmerňovača určuje spektrum (druh prítomných harmonických), nie priamo ich veľkosť.", test: 1 },
+        { q: "25 Sériový rezonančný filter pripojený paralelne k zdroju harmonických prúdu je:", a: ["A. zariadenie vytvárajúce skrat pre príslušnú napäťovú harmonickú", "B. zariadenie vytvárajúce skrat pre príslušnú prúdovú harmonickú", "C. zariadenie vytvárajúce vedenie naprázdno pre príslušnú prúdovú harmonickú"], correct: 1, exp: "V rezonancii klesá impedancia LC filtra k nule, čím vytvorí nízkoimpedančnú cestu (skrat) pre daný prúdový rád.", test: 1 },
+        { q: "26 Sériový rezonančný filter pripojený paralelne k zdroju rušenia neslúži na:", a: ["A. kompenzáciu účinníka", "B. kompenzáciu faktoru výkonu", "C. odstránenie blikania"], correct: 2, exp: "Pasívne rezonančné filtre nedokážu reagovať na rýchle dynamické zmeny napätia spôsobujúce fliker.", test: 1 },
+        { q: "27 Frekvenčne nezávislý parameter pre oblasť nf rušení je:", a: ["A. kapacita", "B. indukčnosť", "C. činný odpor"], correct: 2, exp: "Iba reálny činný odpor R neuvažuje vo svojom základnom vyjadrení frekvenciu siete.", test: 1 },
+        { q: "28 Vzťah pre určenie náhradnej impedancie zaťaženého vedenia je:", a: ["A. Z_h = Z_V * [Z_Zh + Z_h*tgh(γ_h*l)] / [Z_V + Z_Zh*tgh(γ_h*l)]", "B. Z_h = Z_Zh * [Z_2h + Z_Zh*tgh(γ_h*l)] / [Z_Zh + Z_Zh*tgh(γ_h*l)]", "C. Z_h = Z_Vh * [Z_2 + Z_Vh*tgh(γ_h*l)] / [Z_Vh + Z_2*tgh(γ_h*l)]"], correct: 2, exp: "Štandardný dlhý prenosový vzťah využívajúci hyperbolické funkcie pre vlnovú impedanciu vedenia.", test: 1 },
+        { q: "29 Väčšina záťaží, zariadení odoberajúcich výkon, je:", a: ["A. induktívneho charakteru", "B. kapacitného charakteru", "C. odporových"], correct: 0, exp: "Asynchrónne motory, transformátory a tlmivky spôsobujú prevažne induktívny charakter odberu elektriky.", test: 1 },
+        { q: "30 Sériový rezonančný filter má pre harmonické vyššie ako je rezonančná harmonická filtra:", a: ["A. kapacitný charakter", "B. charakter činného odporu", "C. induktívny charakter"], correct: 2, exp: "Nad rezonančnou frekvenciou prevláda reaktancia tlmivky XL nad kapacitnou XC, obvod sa správa induktívne.", test: 1 },
+
+        // TEST 2
+        { q: "31 Sériové aktívne filtre neslúžia na:", a: ["A. kompenzáciu harmonických prúdu", "B. potlačenie napäťovej nesymetrie", "C. zlepšenie faktoru výkonu"], correct: 0, exp: "Sériovo zapojené aktívne filtre injektujú napätie, primárne riešia napäťové harmonické a nesymetriu, nie prúdové.", test: 2 },
+        { q: "32 Kapacita jedného kondenzátora pri zapojení do hviezdy, slúžiaceho na paralelnú kompenzáciu v trojfázovej sústave, sa určí podľa vzťahu:", a: ["A. C_f1 = Q_c / (3 * ω * U_f²)", "B. C_f1 = Q_c / (ω * U_f²)", "C. C_f1 = Q_c / (3 * ω * U²)"], correct: 0, exp: "Výkon trojfázovej sady sa delí medzi tri fázy, pričom sa počíta s fázovým napätím U_f.", test: 2 },
+        { q: "33 Paralelný rezonančný obvod je charakteristický:", a: ["A. viac ako 5-násobným nárastom impedancie obvodu pre rezonančnú frekvenciu oproti základnej harmonickej", "B. viac ako 5-násobným poklesom impedancie obvodu pre rezonančnú frekvenciu oproti základnej harmonickej", "C. menej ako 5-násobným poklesom impedancie obvodu pre rezonančnú frekvenciu"], correct: 0, exp: "Pri paralelnej rezonancii (antirezonancii) dochádza k prudkému nárastu impedancie obvodu.", test: 2 },
+        { q: "34 Zdrojom neprípustných medziharmonických napätia nie sú:", a: ["A. cyklokonvertory", "B. elektrické oblúkové pece", "C. HDO"], correct: 2, exp: "HDO (Hromadné diaľkové ovládanie) využíva vysielanie úmyselných, povolených signálových frekvencií.", test: 2 },
+        { q: "35 Krátkodobá miera vnemu blikania:", a: ["A. P_lt, sa určuje pre zariadenia, ktoré sú v činnosti menej ako 30 minút", "B. P_st, sa určuje pre zariadenia, ktoré sú v činnosti menej ako 30 minút", "C. P_st sa určuje pre zariadenia, ktoré sú v činnosti viac ako 30 minút"], correct: 1, exp: "Skratka 'st' znamená short-term (krátkodobý) interval, štandardne vyhodnocovaný počas 10 alebo 30 minút.", test: 2 },
+        { q: "36 Pre medze blikania podľa normy STN EN 50160 platí:", a: ["A. hodnota P_st <= 1 pre siete nn a vn", "B. hodnota P_lt <= 1 pre siete nn a vn", "C. hodnota P_lt <= 1 len pre siete nn"], correct: 1, exp: "Dlhodobé blikanie P_lt musí byť stabilne pod hodnotou 1 pre nn aj vn distribučné prenosové sústavy.", test: 2 },
+        { q: "37 K možnostiam pre potlačenie kolísania napätia nepatrí:", a: ["A. zväčšenie prierezu napájacieho vedenia", "B. pripojenie ďalšieho zdroja kolísania napätia", "C. použitie statickej kompenzácie"], correct: 1, exp: "Pripojenie dodatočného zdroja flikeru by situáciu s kolísaním napätia iba zhoršilo.", test: 2 },
+        { q: "38 Krivka ANSI:", a: ["A. udáva kompatibilnú úroveň poklesu napätia v súlade STN EN 50160", "B. nezahŕňa hodnotenie prepätí", "C. charakterizuje toleranciu zariadenia na pokles napätia"], correct: 2, exp: "ANSI/CBEMA/ITI krivky slúžia na vyjadrenie imunitnej odolnosti citlivej elektroniky voči poklesom.", test: 2 },
+        { q: "39 Korózne ohrozená vplyvom jednosmerných prúdových polí je:", a: ["A. katodická oblasť", "B. anodická oblasť", "C. neutrálna oblasť"], correct: 1, exp: "Na anóde dochádza k oxidácii a odchodu iónov kovu do okolia, čo spôsobuje materiálovú elektrochemickú koróziu.", test: 2 },
+        { q: "40 Anodická ochrana pred vplyvom jednosmerných prúdových polí je založená na jave:", a: ["A. posunu potenciálu kovu na nulovú hodnotu", "B. posunu potenciálu kovu ku kladnejším hodnotám", "C. posunu potenciálu kovu ku zápornejším hodnotám"], correct: 1, exp: "Anodická polarizácia posúva potenciál kovu do pasívnej oblasti (ku kladnejším hodnotám), kedy vzniká ochranná vrstva.", test: 2 },
+        { q: "41 Elektromagnetická kompatibilita je schopnosť zariadenia alebo systému pracovať vo svojom elektromagnetickom prostredí:", a: ["A. bez vytvárania prípustného EMC rušenia", "B. bez vytvárania neprípustného EMC rušenia", "C. s vytváraním nepripústného EMC rušenia"], correct: 1, exp: "Definícia EMC vyžaduje absenciu neprípustného, obmedzujúceho vyžarovania smerom k iným prístrojom.", test: 2 },
+        { q: "42 Pri elektromagnetickej interferencii:", a: ["A. dochádza k nežiaducemu ovplyvňovaniu a následnému zhoršeniu funkčnosti zariadenia", "B. nedochádza k nežiadúcemu ovplyvneniu", "C. sú zariadenia elektromagneticky kompatibilné"], correct: 0, exp: "Interferencia priamo reprezentuje fyzický stav degradácie funkcie vplyvom rušivého signálu.", test: 2 },
+        { q: "43 Kompatibilná úroveň je úroveň rušenia, u ktorej sa očakáva že:", a: ["A. nebude prekročená vôbec a EMC bude zabezpečená", "B. bude prekročená s malou pravdepodobnosťou a EMC bude zabezpečená", "C. bude prekročená s pravdepodobnosťou väčšou ako 5%"], correct: 1, exp: "Zhoda s otázkou 11. Pravdepodobnosť neprekročenia je definovaná normou (napr. 95% času).", test: 2 },
+        { q: "44 Kvalitatívnym parametrom podľa normy charakterizujúcej napäťové charakteristiky nie je:", a: ["A. frekvencia", "B. prerušenie napájania", "C. prúdové harmonické zložky"], correct: 2, exp: "Znovu zdôraznené – norma pre kvalitu napätia nerieši samotný priebeh odoberaného prúdu.", test: 2 },
+        { q: "45 Najväčšiu prúdovú nesymetriu spôsobujú:", a: ["A. trojfázové transformátory", "B. transponované vzdušné vedenie", "C. jednofázové spotrebiče"], correct: 2, exp: "Zapojenie výkonnej jednofázovej záťaže vyvoláva v systéme najprudší vzostup nesúmernosti prúdov.", test: 2 },
+        { q: "46 Priemyslové zariadenie nemôže byť pripojené a trvalo prevádzkované pokiaľ:", a: ["A. koeficient prúdovej nesymetrie je menší, nanajvýš rovný 2%", "B. koeficient napäťovej nesymetrie je väčší ako 2%", "C. koeficient prúdovej nesymetrie je väčší ako 2%"], correct: 1, exp: "Limit 2% pre trvalú napäťovú nesymetriu je striktnou podmienkou pripojiteľnosti.", test: 2 },
+        { q: "47 Pri amplitúdovej nesymetrii môže činiteľ prúdovej nesymetrie nadobúdať hodnoty od:", a: ["A. 0 do 100%", "B. 0 do 273%", "C. 0 do nekonečna %"], correct: 0, exp: "Ak sa menia iba amplitúdy fáz bez fázových posunov, koeficient neprekročí rozsah 100%.", test: 2 },
+        { q: "48 Pre fázory súslednej zložkovej sústavy prúdov vo fáze A platí, že sú postupne navzájom pootočené o:", a: ["A. 240 stupňov po smere hodinových ručičiek", "B. 240 stupňov proti smeru hodinových ručičiek", "C. o 0 stupňov, ležia na jednej priamke"], correct: 1, exp: "Kladná (súsledná) zložka rotuje štandardne proti smeru hodinových ručičiek s odstupom fáz.", test: 2 },
+        { q: "49 Nesúmernú sústavu prúdov vo fáze A trojfázovej sústavy vieme vyjadriť podľa vzťahu:", a: ["A. I_A = I_A+ + I_A- + I_A0", "B. I_A = I_A+ + a * I_A- + a² * I_A0", "C. I_A = I_A+ + a² * I_A- + a * I_A0"], correct: 0, exp: "Pre referenčnú fázu A je vyjadrenie priamym lineárnym súčtom všetkých troch symetrických zložiek.", test: 2 },
+        { q: "50 Pri zapojení dvoch jednofázových spotrebičov na združené napätia v trojfázovej sústave bude nadobúdať prúdová nesymetria:", a: ["A. od 0 do 100%", "B. vždy 50%", "C. môže byť od 0 do nekonečna"], correct: 0, exp: "V závislosti od výkonového pomeru dvoch záťaží leží prúdová nesymetria v medziach od 0 do 100%.", test: 2 },
+        { q: "51 Spektrum prúdových harmonických závisí od:", a: ["A. komutačného uhla", "B. od spôsobu riadenia a veľkosti riadiaceho uhla", "C. zapojenia usmerňovača (mostíkové, uzlové)"], correct: 2, exp: "Počet impulzov usmerňovača (napr. 6 vs 12) priamo diktuje, ktoré frekvenčné zložky sa v spektre objavia.", test: 2 },
+        { q: "52 Impedancia sériového rezonančného filtra slúžiaceho na filtráciu harmonických prúdu:", a: ["A. Má kapacitný charakter pre rezonančnú harmonickú", "B. Má kapacitný charakter pre základnú harmonickú", "C. Má kapacitný charakter pre harmonické rádov vyšších ako je rezonančná harmonická"], correct: 1, exp: "Pre základnú sieťovú frekvenciu (50 Hz), ktorá je hlboko pod rezonanciou filtra, dominuje kapacitná časť filtra.", test: 2 },
+        { q: "53 Kompatibilná úroveň je úroveň rušenia, u ktorej sa očakáva že:", a: ["A. Bude prekročená s pravdepodobnosťou menšou ako 8%", "B. Nebude prekročená vôbec a následne EMC bude zabezpečené", "C. Bude prekročená s pravdepodobnosťou, ktorá je zadaná normou pre príslušné rušenie"], correct: 2, exp: "Konkrétne limitné štatistické pravdepodobnosti definujú špecifické predmetové normy.", test: 2 },
+        { q: "54 Pre koeficient celkového harmonického skreslenia napätia platí vzťah:", a: ["A. THD_U = sqrt( Σ_{h=0}^{40} u_h² )", "B. THD_U = sqrt( Σ_{h=1}^{40} u_h² )", "C. THD_U = sqrt( Σ_{h=2}^{40} u_h² )"], correct: 2, exp: "THD index sumuje vyššie harmonické zložky, začína sa teda striktne od rádu h = 2.", test: 2 },
+        { q: "55 Vyznačte pravdivú definíciu pre kompatibilnú úroveň:", a: ["A. Koeficient THD napätia v NN sieti nesmie byť viac ako 8% so 100 percentnou pravdepodobnosťou", "B. Účinník odberu musí byť väčší ako 0,95 induktívneho charakteru", "C. Prúdová nesymetria nesmie prekročiť 2% so 100 percentnou pravdepodobnosťou"], correct: 0, exp: "Hoci norma hovorí o 95% času, v rámci možností testu je A označená ako správna definícia limitu.", test: 2 },
+        { q: "56 Krivka CBEMA:", a: ["A. Jej tvar nezávisí od času trvania udalosti", "B. Charakterizuje odolnosť zariadenia na vzniknutú udalosť", "C. Udáva kompatibilnú úroveň poklesu napätia v súlade s STN EN 50160"], correct: 1, exp: "Vyjadruje oblasť bezpečnej prevádzky a odolnosti IT techniky voči anomáliám napájania.", test: 2 },
+        { q: "57 Faktor výkonu (skutočný účinník) v sieťach s harmonickými v porovnaní s účinníkom základnej harmonickej je:", a: ["A. Rovnaký", "B. Väčší", "C. Menší"], correct: 2, exp: "Skreslenie prúdu vyššími harmonickými prenáša dodatočný deformačný jalový výkon, čo skutočný Power Factor znižuje.", test: 2 },
+        { q: "58 Krátkodobé poklesy napätia sú definované ako:", a: ["A. Náhle zníženie efektívnej hodnoty napájacieho napätia na hodnotu medzi 90% a 0% s trvaním do 1 sekundy", "B. Náhle zníženie amplitúdy napájacieho napätia na hodnotu medzi 90% a 5% s trvaním do 1 min", "C. Náhle zníženie efektívnej hodnoty napájacieho napätia na hodnotu medzi 90 a 5% s trvaním do 1 sekundy"], correct: 2, exp: "Pokles sa ráta od 90% do 5% menovitej hodnoty. V reálnej praxi sa tolerancia rozširuje až do 3 sekúnd.", test: 2 },
+        { q: "59 Pre medze blikania podľa normy STN EN 50 160 platí:", a: ["A. Hodnota Plt <= 1 pre sieťe NN a VN počas 95% týždňa", "B. Hodnota Pst <= 0,8 pre siete NN a VN počas 100% týždňa", "C. Hodnota Plt <= 1 pre siete NN a VN počas 100% týždňa"], correct: 0, exp: "Väčšina kvalitatívnych kritérií EN 50160 musí byť splnená pre 95% intervalov jedného týždňa.", test: 2 },
+        { q: "60 Najmenej pravdepodobný jav spôsobený medziharmonickými zložkami prúdu alebo napätia je:", a: ["A. Vznik rezonančných javov", "B. Vznik blikania", "C. Vznik prídavných strát vo vedení"], correct: 1, exp: "Medziharmonické síce môžu vyvolať rázové kmity a interferenciu, priamy fliker žiaroviek však spôsobujú najmä subharmonické kmity blízke 50Hz.", test: 2 },
+
+        // TEST 3
+        { q: "61 Energetické rušenie sa určuje pre frekvencie:", a: ["A. 0 až 2000 Hz", "B. 50 až 2000 Hz", "C. 50 až 2500 Hz"], correct: 1, exp: "Energetické/sieťové rušenie uvažuje frekvencie od základnej zložky priemyselného rozvodu (50 Hz).", test: 3 },
+        { q: "62 Sériové aktívne filtre slúžia predovšetkým na:", a: ["A. Potlačenie napäťovej nesymetrie", "B. Zlepšenie faktoru výkonu", "C. Kompenzáciu harmonických prúdu"], correct: 0, exp: "Sériová topológia aktívneho filtra je ideálna na stabilizáciu a vyrovnávanie nesúmernosti napätí.", test: 3 },
+        { q: "63 Určte nepravdivý výrok:", a: ["A. Pst je pomerná veličina, ktorá sa určuje pre zariadenia, ktoré sú v činnosti menej ako 30 minút", "B. Ak je Pst < 1 nedochádza ku vnímaniu kolísania napätia", "C. Ak je Pst < 1%, vtedy nedochádza ku vnemu kolísania napätia"], correct: 2, exp: "Zápis s percentom (%) je nezmyselný, Pst je čisté bezrozmerné číslo.", test: 3 },
+        { q: "64 Najvyššie THD prúdu má zariadenie:", a: ["A. 6-impulzový diódový usmerňovač bez induktora", "B. 6-impulzový diódový usmerňovač s induktora", "C. 12-impulzový diódový usmerňovač bez induktora"], correct: 0, exp: "Absencia vyhladzovacieho induktora (tlmivky) vedie k úzkym prúdovým impulzom s extrémnym obsahom vyšších harmonických.", test: 3 },
+        { q: "65 Vyznačte pravdivý výrok: Chránené kompenzačné zariadenie", a: ["A. Slúži na potláčanie harmonických nižších rádov", "B. Má rezonančnú frekvenciu vyššiu alebo rovnú 250 Hz", "C. Predstavuje sériový rezonančný obvod pripájaný paralelne ku kompenzovanému zariadeniu"], correct: 2, exp: "Hradené/chránené kompenzácie dopĺňajú kondenzátory o tlmivky, čím s nimi tvoria sériový rezonančný obvod.", test: 3 },
+        { q: "66 Amplitúdový zákon hovorí že:", a: ["A. Veľkosť napäťových harmonických je nepriamo úmerná rádu napäťových harmonických", "B. Veľkosť napäťových harmonických je priamo úmerná rádu napäťových harmonických", "C. Veľkosť prúdových harmonických je nepriamo úmerná rádu prúdových harmonických"], correct: 2, exp: "Základné teoretické zjednodušenie predpokladá klesanie prúdov harmonických s ich rádom (I_h = I_1 / h).", test: 3 },
+        { q: "67 Medzi hlavné dôvody odstraňovania harmonických nepatrí:", a: ["A. Znižovanie strát vo vedení", "B. Možnosť rušenia prijímačov HDO", "C. Vznik blikania"], correct: 2, exp: "Klasické vyššie harmonické (napr. 5, 7, 11) nespôsobujú nízkofrekvenčný fliker svetelných zdrojov.", test: 3 },
+        { q: "68 Koeficient SAIDI udáva:", a: ["A. priemernú početnosť prerušení dodávky (prerušenie * rok^-1 * zákazník^-1)", "B. priemernú početnosť prerušení dodávky (minúty * rok^-1 * zákazník^-1)", "C. priemernú dobu trvania prerušení dodávky (minúty * rok^-1 * zákazník^-1)"], correct: 2, exp: "Index SAIDI (System Average Interruption Duration Index) vyjadruje celkové priemerné trvanie výpadkov v minútach na zákazníka za rok.", test: 3 },
+        { q: "69 Thomsonov vzťah platí pre výpočet:", a: ["A. frekvencie sériovej rezonancie", "B. frekvencie paralelnej rezonancie", "C. frekvencie paralelnej aj sériovej rezonancie"], correct: 2, exp: "Thomsonov vzorec pre rezonančnú frekvenciu f = 1 / (2*π*sqrt(L*C)) platí identicky pre oba typy ideálnych rezonančných obvodov.", test: 3 },
+        { q: "70 K prostriedkom slúžiacim pre potlačenie harmonických nepatrí:", a: ["A. vhodné zapojenie siete", "B. kondenzátory slúžiace na kompenzáciu účinníka", "C. transformátor v zapojení YY"], correct: 2, exp: "Transformátor zapojený v neuzemnenom tvare Y-Y nedokáže potláčať alebo blokovať tretiu harmonickú a jej násobky.", test: 3 },
+        { q: "71 Vedenie naprázdno pre frekvenciu 1000 Hz má:", a: ["A. induktívny charakter", "B. kapacitný charakter", "C. odporový charakter"], correct: 1, exp: "Dlhé vedenie bez pripojenej záťaže sa pri nižších zvukových frekvenciách prejavuje dominantnou priečnou kapacitou.", test: 3 },
+        { q: "72 Sériový rezonančný filter má pre harmonické rovné rezonančnej harmonickej filtra:", a: ["A. kapacitný charakter", "B. charakter činného odporu", "C. induktívny charakter"], correct: 1, exp: "Presne v bode rezonancie sa indukčná a kapacitná zložka impedancie vyrušia, ostáva iba čistý reálny odpor.", test: 3 },
+        { q: "73 Sériové aktívne filtre slúžia na:", a: ["A. kompenzáciu harmonických prúdu", "B. potlačenie napäťovej nesymetrie", "C. zlepšenie faktoru výkonu"], correct: 1, exp: "Zhodná s otázkou 31 a 62.", test: 3 },
+        { q: "74 Krivka CBEMA charakterizuje:", a: ["A. toleranciu zariadenia na pokles napätie nezávisle od doby trvania jeho poklesu", "B. toleranciu zariadenia na pokles a prerušenie napätia nezávisle od jeho doby trvania", "C. toleranciu zariadenia na zmeny napätia v závislosti od doby ich trvania"], correct: 2, exp: "Kľúčovým parametrom CBEMA grafu je časové trvanie (trvanie impulzu alebo poklesu v ms).", test: 3 },
+        { q: "75 Určte nepravdivý výrok:", a: ["A. Ak je Pst <= 1%, vtedy nedochádza ku vnemu kolísania napätia", "B. Ak je Pst >= 1 nedochádza ku vnímaniu kolísania napätia", "C. Pst je pomerná veličina, ktorá sa určuje pre zariadenia, ktoré sú v činnosti menej ako 30 minút"], correct: 1, exp: "Ak je Pst väčšie alebo rovné 1, vnem kolísania jasu svetla (blikanie) nastáva a je rušivý.", test: 3 },
+        { q: "76 Určte nepravdivý výrok. Relatívna zmena napätia je:", a: ["A. normovaná v STN EN 50160", "B. definovaná ako d = ΔU/U_n", "C. normovaná v STN EN 61000-3-3"], correct: 0, exp: "Relatívna zmena napätia a fliker emisie sú detailne limitované v norme STN EN 61000-3-3, nie v 50160.", test: 3 },
+        { q: "77 Štandardný elektrochemický potenciál medi je približne:", a: ["A. 5 V", "B. 0 V", "C. -5 V"], correct: 1, exp: "Skutočný potenciál Cu je +0,34 V, v kontexte hrubých tabuľkových možností je najbližšie hodnota 0 V.", test: 3 },
+        { q: "78 Jalový výkon vo fáze A (Q_A) pri zapojení jednofázového spotrebiča na združené napätie U_AB = 110 kV s činným výkonom P_AB = 5 MW, cos fi_AB = 0.95 sa rovná:", a: ["A. Q_A = 0,31 Mvar (ind)", "B. Q_A = -0,62 Mvar (kap)", "C. Q_A = -0,31 Mvar (kap)"], correct: 2, exp: "Vypočítaná hodnota podľa fázových pomerov pre nesymetrické zaťaženie s kapacitným charakterom.", test: 3 },
+        { q: "79 Na strane záťaže 12-impulzového usmerňovača sa vyskytujú nasledovné charakteristické harmonické:", a: ["A. 11, 13, 23, 25, 35, 37...", "B. 12, 24, 36...", "C. 6, 12, 18, 24..."], correct: 1, exp: "Na jednosmernej (DC) strane záťaže sa zvlnenie prejavuje násobkami počtu pulzov, teda 12, 24, 36 atď.", test: 3 },
+        { q: "80 Amplitúdový zákon znie:", a: ["A. veľkosť prúdových harmonických je nepriamo úmerná rádu základnej harmonickej", "B. veľkosť prúdových harmonických je priamo úmerná rádu základnej harmonickej", "C. na striedavej strane usmerňovača vznikajú prúdové harmonické rádu h = k*p ± 1"], correct: 2, exp: "V kontexte usmerňovačov definuje zákon prítomnosť charakteristických AC prúdov na základe počtu pulzov p.", test: 3 },
+        { q: "81 Sériový rezonančný filter pripojený paralelne k zdroju harmonických neslúži na:", a: ["A. kompenzáciu účinníka", "B. kompenzáciu faktoru výkonu", "C. odstránenie blikania"], correct: 2, exp: "Duplicitná otázka potvrdzujúca neúčinnosť LC filtrov proti flikeru.", test: 3 },
+        { q: "82 Frekvenčne závislý parameter pre oblasť nf rušení je:", a: ["A. kapacita", "B. indukčnosť", "C. zvod"], correct: 1, exp: "Indukčnosť tlmiviek priamo mení svoju reaktanciu XL lineárne s rastúcou frekvenciou.", test: 3 },
+
+        // TEST 4 (OPEN/BULLETED QUESTIONS)
+        { q: "⭐ Aký charakter má väčšina spotrebičov v distribučnej sieti?", a: ["A. Kapacitný", "B. Induktívny", "C. Čisto odporový"], correct: 1, exp: "Z dôvodu masívneho nasadenia motorov a transformátorov prevláda indukčný charakter.", test: 4 },
+        { q: "⭐ Je striedavá korózia silnejšia ako korózia spôsobená jednosmerným prúdom?", a: ["A. Áno, striedavý prúd rozrušuje kov oveľa rýchlejšie", "B. Nie, striedavá má oveľa menšie účinky a je slabšia", "C. Sú úplne identické v účinkoch"], correct: 1, exp: "Striedavé polia periodicky obracajú polaritu, čím sa elektrochemický prenos materiálu z veľkej časti neutralizuje.", test: 4 },
+        { q: "⭐ Skutočný celkový účinník (Power Factor) je v sieťach s vyššími harmonickými:", a: ["A. Väčší ako účinník prvej harmonickej", "B. Menší ako účinník prvej harmonickej", "C. Úplne nezávislý od harmonických"], correct: 1, exp: "Prítomnosť harmonických zvyšuje zdanlivý výkon bez príspevku k užitočnej práci, čo znižuje celkový energetický účinník.", test: 4 },
+        { q: "⭐ Aký je základný princíp katodickej ochrany kovov pred koróziou?", a: ["A. Posun potenciálu kovu ku kladnejším hodnotám", "B. Posun potenciálu kovu k zápornejším hodnotám", "C. Odpojenie kovu od uzemňovacej sústavy"], correct: 1, exp: "Zámerným posunutím potenciálu do záporných hodnôt sa chránená štruktúra stane katódou a nekoroduje.", test: 4 },
+        { q: "⭐ Ktoré transformátorové zapojenie sa nepoužíva (resp. nie je vhodné) na filtráciu/blokovanie harmonických?", a: ["A. Zapojenie do trojuholníka (D)", "B. Zapojenie do lenej hviezdy (Z)", "C. Zapojenie vinutí Yy"], correct: 2, exp: "Zapojenie Yy bez vyvedeného uzla neponúka cestu pre cirkuláciu prúdov 3. harmonickej, čím ich netlmí.", test: 4 },
+        { q: "⭐ Od čoho závisí celková veľkosť prúdov harmonických zložiek pri riadenom usmerňovači?", a: ["A. Od konštrukčnej výšky transformátora", "B. Od komutačného uhla γ a od veľkosti riadiaceho uhla α", "C. Výhradne od materiálu polovodičových diód"], correct: 1, exp: "Uhly zopnutia polovodičov priamo formujú geometrický priebeh odberu prúdu z napájacej siete.", test: 4 },
+        { q: "⭐ Čo hovorí mechanizmus Higgsovho bozónu (zahrnutý ako bonus v materiáloch)?", a: ["A. Definuje nelineárne skreslenie polovodičov", "B. Vysvetľuje spôsob, akým elementárne častice získavajú svoju hmotnosť", "C. Určuje rýchlosť šírenia prepätia vo vákuu"], correct: 1, exp: "Jedná sa o fundamentálny fyzikálny mechanizmus poľa v časticovej fyzike, ktorý bol zakomponovaný do vašich podkladov.", test: 4 },
+        { q: "⭐ Krátkodobá miera vnemu blikania (Pst) sa štandardne určuje pre zariadenia s prevádzkou:", a: ["A. Nad 2 hodiny súvisle", "B. Do 30 minút", "C. Presne 24 hodín"], correct: 1, exp: "Pst (short term) je určená pre meracie intervaly s obmedzeným časovým trvaním prevádzky.", test: 4 },
+        { q: "⭐ Vo Faradayovom zákone vyjadrujúcom elektrochemickú koróziu (M = a * I * t) reprezentuje premenná 't':", a: ["A. Teplotu elektrolytu v stupňoch Celzia", "B. Čas pôsobenia prechádzajúceho jednosmerného prúdu", "C. Hrúbku pasivačnej vrstvy"], correct: 1, exp: "Hmotnosť vylúčeného kovu je priamo úmerná integrálu prúdu v čase.", test: 4 },
+        { q: "⭐ Aká je maximálna povolená hodnota napäťovej nesymetrie pre bezproblémové pripojenie priemyselného zariadenia?", a: ["A. ± 10 %", "B. ± 2 %", "C. ± 5 %"], correct: 1, exp: "Hranica 2 % nesymetrie je kritériom kvality podľa pripojovacích podmienok distribučných sietí.", test: 4 }
+    ];
+
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let answered = false;
+
+    function startQuiz(testNumber) {
+        currentQuestions = allQuestions.filter(q => q.test === testNumber);
+        currentIdx = 0;
+        score = 0;
+        
+        document.getElementById("menu-screen").classList.add("hidden");
+        document.getElementById("result-screen").classList.add("hidden");
+        document.getElementById("quiz-screen").classList.remove("hidden");
+        
+        let titleText = "Test " + testNumber;
+        if(testNumber === 4) titleText = "Test 4: Otvorené otázky";
+        document.getElementById("quiz-title").innerText = titleText;
+
+        showQuestion();
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById("explanation-box").classList.add("hidden");
+        document.getElementById("next-btn").classList.add("hidden");
+
+        const qData = currentQuestions[currentIdx];
+        document.getElementById("progress").innerText = `Otázka ${currentIdx + 1} z ${currentQuestions.length}`;
+        document.getElementById("question-text").innerText = qData.q;
+
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = "";
+
+        qData.a.forEach((option, index) => {
+            const button = document.createElement("button");
+            button.className = "option-btn";
+            button.innerText = option;
+            button.onclick = () => selectOption(index, button);
+            optionsContainer.appendChild(button);
+        });
+    }
+
+    function selectOption(selectedIndex, clickedButton) {
+        if (answered) return;
+        answered = true;
+
+        const qData = currentQuestions[currentIdx];
+        const buttons = document.querySelectorAll(".option-btn");
+
+        buttons.forEach((btn, index) => {
+            btn.disabled = true;
+            if (index === qData.correct) {
+                btn.classList.add("correct");
+            }
+        });
+
+        if (selectedIndex === qData.correct) {
+            score++;
+        } else {
+            clickedButton.classList.add("incorrect");
+        }
+
+        // Show explanation
+        document.getElementById("explanation-text").innerText = qData.exp;
+        document.getElementById("explanation-box").classList.remove("hidden");
+        document.getElementById("next-btn").classList.remove("hidden");
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if (currentIdx < currentQuestions.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        document.getElementById("quiz-screen").classList.add("hidden");
+        document.getElementById("result-screen").classList.remove("hidden");
+        
+        const scoreDisplay = document.getElementById("score-display");
+        scoreDisplay.innerText = `${score} / ${currentQuestions.length}`;
+
+        const feedback = document.getElementById("feedback-text");
+        const percentage = (score / currentQuestions.length) * 100;
+
+        if (percentage >= 90) {
+            feedback.innerText = "Excelentný výkon! Na skúšku si pripravený špičkovo.";
+            feedback.style.color = "var(--success)";
+        } else if (percentage >= 70) {
+            feedback.innerText = "Veľmi dobrý výsledok. Pár drobností ešte dollaď a máš áčko v vrecku.";
+            feedback.style.color = "var(--text-main)";
+        } else {
+            feedback.innerText = "Chcelo by to ešte jedno opakovanie materiálov. Skús to znovu!";
+            feedback.style.color = "var(--error)";
+        }
+    }
+
+    function showMenu() {
+        document.getElementById("result-screen").classList.add("hidden");
+        document.getElementById("quiz-screen").classList.add("hidden");
+        document.getElementById("menu-screen").classList.remove("hidden");
+    }
+</script>
+
+</body>
+</html>
